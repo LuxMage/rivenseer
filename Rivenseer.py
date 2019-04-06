@@ -1,14 +1,16 @@
+import csv
 import discord
 import json
 import requests
 import time
+from collections import deque
 from datetime import datetime
 
 TOKEN = 'NTYyMzg4ODk5MzY0NzMyOTMw.XKKRag.ILc62i-5kgTejgDQV9dYS4Ss2W4'
 
 client = discord.Client()
 
-prefix = '.'
+defaultPrefix = '.'
 defaultPlatform = 'pc'
 
 pcRivenData = list()
@@ -16,32 +18,61 @@ xb1RivenData = list()
 ps4RivenData = list()
 nsRivenData = list()
 
+serverPrefixes = {'388168527460433953': '.', '563856512636944391': '.'}
+serverPlatforms = {'388168527460433953': 'pc', '563856512636944391': 'pc'}
+
+@client.event
+async def on_ready():
+
+	await fetch_riven_data()
+	riven_refresh()
+	
+	print('Bot initiated.')
+	
+@client.event
+async def on_server_join(server):
+	global defaultPrefix
+	global serverPrefixes
+	global defaultPlatform
+	global serverPlatforms
+
+	serverPrefixes[server.id] = defaultPrefix
+	serverPlatforms[server.id] = defaultPlatform
+	
+@client.event
+async def on_server_remove(server):
+	global serverPrefixes
+	global serverPlatforms
+	
+	del serverPrefixes[server.id]
+	del serverPlatforms[server.id]
+
 @client.event
 async def on_message(message):
-	global defaultPlatform
+	global serverPrefixes
+	global serverPlatforms
 
 	if message.author == client.user:
 		return
 	
 	# Prefix change ---------
-	global prefix
-	if message.content.startswith('{0}prefix'.format(prefix)):
+	if message.content.startswith('{0}prefix'.format(serverPrefixes[message.server.id])):
 		if message.author.server_permissions.manage_server:
 			cmd = message.content.split(" ")
-			prefix = cmd[1]
-			msg = 'My prefix is now \"{0}\"! Use that to summon me!'.format(prefix)
+			serverPrefixes[message.server.id] = cmd[1]
+			msg = 'My prefix is now \"{0}\"! Use that to summon me!'.format(serverPrefixes[message.server.id])
 			await client.send_message(message.channel, msg)
 		else:
 			await client.send_message(message.channel, 'You do not have permission to change the prefix!')
 		
 	# Message cleaner -------
-	elif message.content.startswith('{0}clean'.format(prefix)):
+	elif message.content.startswith('{0}clean'.format(serverPrefixes[message.server.id])):
 		deletedList = await client.purge_from(message.channel, check=is_bot)
 		await client.send_message(message.channel, 'Deleted {0} message(s)'.format(len(deletedList)))
 		
-	# Riven search ----------	
-	elif message.content.startswith('{0}riven'.format(prefix)):
-		queryString = message.content.replace('{0}riven '.format(prefix), '', 1)
+	# Riven search ----------
+	elif message.content.startswith('{0}riven'.format(serverPrefixes[message.server.id])):
+		queryString = message.content.replace('{0}riven '.format(serverPrefixes[message.server.id]), '', 1)
 		query = queryString.split(", ")
 		
 		riven = query[0].upper()
@@ -49,7 +80,7 @@ async def on_message(message):
 		platform = ''
 		
 		if len(query) == 1:
-			platform = defaultPlatform
+			platform = serverPlatforms[message.server.id]
 		else:
 			plat = query[1].lower()
 			
@@ -62,7 +93,7 @@ async def on_message(message):
 			elif plat == 'ns':
 				platform = 'ns'
 			else:
-				await client.send_message(message.channel, 'Platform not recognized. Use `{0}help platform` for a list of valid platforms!')
+				await client.send_message(message.channel, 'Platform not recognized. Use `{0}help platform` for a list of valid platforms!'.format(serverPrefixes[message.server.id]))
 				return
 		
 		searchList = list()
@@ -88,8 +119,6 @@ async def on_message(message):
 		
 		foundRiven = False
 		
-		print('Search List: {0}'.format(len(searchList)))
-		
 		for r in searchList:
 			if riven.strip() == r.compatibility:
 				foundRiven = True
@@ -107,14 +136,14 @@ async def on_message(message):
 			await client.send_message(message.channel, 'No Riven was found. Try again!')
 	
 	# Help prompt -----------------
-	elif message.content.startswith('{0}help'.format(prefix)):
+	elif message.content.startswith('{0}help'.format(serverPrefixes[message.server.id])):
 		help = message.content.split()
 		em = discord.Embed()
 		em.title = 'Rivenseer'
 		em.colour = 0xF7BF25
 		
 		if len(help) == 1:
-			em.description = 'Hello! I am a bot designed to fetch Warframe Riven Data (provided by the developers) and make it available here in Discord!\nCurrently, my prefix is `{0}`\nIf you would like more info on a command, type `{1}help <command>`!'.format(prefix, prefix)
+			em.description = 'Hello! I am a bot designed to fetch Warframe Riven Data (provided by the developers) and make it available here in Discord!\nCurrently, my prefix is `{0}`\nIf you would like more info on a command, type `{1}help <command>`!'.format(serverPrefixes[message.server.id], serverPrefixes[message.server.id])
 			em.add_field(name='COMMANDS', value='`help` - displays this prompt\n`riven` - gets current Riven data on a weapon\n`platform` - sets the default platform used by the riven command\n`clean` - removes some (if not all) of messages produced by me\n`prefix` - changes the prefix used to summon me', inline=False)
 			await client.send_message(message.channel, embed=em)
 		else:
@@ -122,7 +151,7 @@ async def on_message(message):
 				em.description = '`help` - displays the generic help prompt\n`help <command>` - displays more info about the given command'
 				await client.send_message(message.channel, embed=em)
 			elif help[1] == 'riven':
-				em.description = '`riven <weapon>, [platform]` - gets Riven data for that weapon (unrolled rivens and rolled rivens).\n\n**NOTE:** Variant types (Prime, Prisma, Wraith, Vaykor, etc.) should not be included in the weapon name __(with the exception of Euphona Prime, Dakra Prime, and Reaper Prime)__. Sword and Shield weapons must include spaces and the ampersand:\n(Ack & Brunt, Sigma & Octantis, etc.)\n\nThe platform argument is optional, but you can use it to override the default platform setting. If it is omitted, this command will return the Riven data for the default platform (currently {0}).\n\nAll data is actual trade data and not taken from trade chat.\n\n**Examples of valid queries:**\n`{1}riven Lato`, `{2}riven cobra & crane, ns`, `{3}riven REAPER PRIME, xb1`'.format(defaultPlatform.upper(), prefix, prefix, prefix)
+				em.description = '`riven <weapon>, [platform]` - gets Riven data for that weapon (unrolled rivens and rolled rivens).\n\n**NOTE:** Variant types (Prime, Prisma, Wraith, Vaykor, etc.) should not be included in the weapon name __(with the exception of Euphona Prime, Dakra Prime, and Reaper Prime)__. Sword and Shield weapons must include spaces and the ampersand:\n(Ack & Brunt, Sigma & Octantis, etc.)\n\nThe platform argument is optional, but you can use it to override the default platform setting. If it is omitted, this command will return the Riven data for the default platform (currently {0}).\n\nAll data is actual trade data and not taken from trade chat.\n\n**Examples of valid queries:**\n`{1}riven Lato`, `{2}riven cobra & crane, ns`, `{3}riven REAPER PRIME, xb1`'.format(defaultPlatform.upper(), serverPrefixes[message.server.id], serverPrefixes[message.server.id], serverPrefixes[message.server.id])
 				await client.send_message(message.channel, embed=em)
 			elif help[1] == 'platform':
 				em.description = '`platform <platform>` - sets the default platform for searching rivens (you must have Manage Server permission to use this command).\n\nCurrently, the default platform is {0}\n\nValid platform parameters are `pc`, `xb1`, `ps4`, `ns`'.format(defaultPlatform.upper())
@@ -137,40 +166,34 @@ async def on_message(message):
 				await client.send_message(message.channel, 'No command by that name exists!')
 	
 	# Default platform switcher -------------
-	elif message.content.startswith('{0}platform'.format(prefix)):
-		platform = message.content.replace('{0}platform '.format(prefix), '')
+	elif message.content.startswith('{0}platform'.format(serverPrefixes[message.server.id])):
+		platform = message.content.replace('{0}platform '.format(serverPrefixes[message.server.id]), '')
 		
 		if message.author.server_permissions.manage_server == True:
 			if platform.lower() == 'pc':
-				defaultPlatform = 'pc'
+				serverPlatforms[message.server.id] = 'pc'
 				await client.send_message(message.channel, 'Default platform changed to PC!')
 			elif platform.lower() == 'xb1':
-				defaultPlatform = 'xb1'
+				serverPlatforms[message.server.id] = 'xb1'
 				await client.send_message(message.channel, 'Default platform changed to XBox One!')
 			elif platform.lower() == 'ps4':
-				defaultPlatform = 'ps4'
+				serverPlatforms[message.server.id] = 'ps4'
 				await client.send_message(message.channel, 'Default platform changed to PlayStation 4!')
 			elif platform.lower() == 'ns':
-				defaultPlatform = 'ns'
+				serverPlatforms[message.server.id] = 'ns'
 				await client.send_message(message.channel, 'Default platform changed to Nintendo Switch!')
 			else:
 				await client.send_message(message.channel, 'Platform not recognized. Use `{0}help platform` for more info!'.format(prefix))
 		else:
 			await client.send_message('You do not have permission to change the default platform!')
+			
+	elif message.content.startswith('{0}writeCSV'.format(serverPrefixes[message.server.id])):
+		with open('serverPrefixes.csv', 'w', newline='') as csvFile:
+			write = csv.writer(csvFile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+			write.writerow([message.server.id] + [serverPrefixes[message.server.id]])
 				
-	elif message.content.startswith('{0}'.format(prefix)):
+	elif message.content.startswith('{0}'.format(serverPrefixes[message.server.id])):
 		await client.send_message(message.channel, 'Command not recognized. Use the `help` command to see a list of my commands!')
-		
-@client.event
-async def on_ready():
-
-	await fetch_riven_data()
-
-	prefix = '.'
-	
-	riven_refresh()
-	
-	print('Bot initiated.')
 
 # --------------------------------------------------------------
 
@@ -178,8 +201,7 @@ async def on_ready():
 class Riven:
 	def __init__(self, d):
 		self.__dict__ = d
-		
-
+	
 # --------------------------------------------------------------
 
 async def fetch_riven_data():
@@ -203,10 +225,8 @@ async def fetch_riven_data():
 	ps4RivenData = dict_list_to_object_list(ps4DictList)
 	nsRivenData = dict_list_to_object_list(nsDictList)
 	
-	print('PC: {0}'.format(len(pcRivenData)))
-	print('XB1: {0}'.format(len(xb1RivenData)))
-	print('PS4: {0}'.format(len(ps4RivenData)))
-	print('NS: {0}'.format(len(nsRivenData)))
+	if len(pcRivenData) == 0 or len(xb1RivenData) == 0 or len(ps4RivenData) == 0 or len(nsRivenData) == 0:
+		print('Error occurred while getting Riven data! Restart the bot and try again!')
 	
 async def riven_refresh():
 	dt = datetime.utcnow()
