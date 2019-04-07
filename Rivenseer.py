@@ -130,11 +130,11 @@ async def on_message(message):
 				if riven.strip() == r.compatibility:
 					foundRiven = True
 					
-				if r.rerolled == False:
-					rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Riven Popularity:** {4}\n\n'.format(r.avg, r.stddev, r.min, r.max, r.pop), inline=False)
+					if r.rerolled == False:
+						rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Riven Popularity:** {4}\n\n'.format(r.avg, r.stddev, r.min, r.max, r.pop), inline=False)
 					
-				elif r.rerolled == True:
-					rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Riven Popularity:** {4}'.format(r.avg, r.stddev, r.min, r.max, r.pop), inline=False)
+					elif r.rerolled == True:
+						rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Riven Popularity:** {4}'.format(r.avg, r.stddev, r.min, r.max, r.pop), inline=False)
 					
 		else:
 			if riven == 'VEILED KITGUN':
@@ -184,7 +184,7 @@ async def on_message(message):
 				em.description = '`help` - displays the generic help prompt\n`help <command>` - displays more info about the given command'
 				await client.send_message(message.channel, embed=em)
 			elif help[1] == 'riven':
-				em.description = '`riven <weapon>, [platform]` - gets Riven data for that weapon (unrolled rivens and rolled rivens).\n\n**NOTE:** Variant types (Prime, Prisma, Wraith, Vaykor, etc.) should not be included in the weapon name __(with the exception of Euphona Prime, Dakra Prime, and Reaper Prime)__. Sword and Shield weapons must include spaces and the ampersand:\n(Ack & Brunt, Sigma & Octantis, etc.)\n\nThe platform argument is optional, but you can use it to override the default platform setting. If it is omitted, this command will return the Riven data for the default platform (currently {0}).\n\nAll data is actual trade data and not taken from trade chat.\n\n**Examples of valid queries:**\n`{1}riven Lato`, `{2}riven cobra & crane, ns`, `{3}riven REAPER PRIME, xb1`'.format(defaultPlatform.upper(), serverPrefixes[message.server.id], serverPrefixes[message.server.id], serverPrefixes[message.server.id])
+				em.description = '`riven <weapon>, [platform]` - gets Riven data for that weapon (unrolled rivens and rolled rivens).\n\n**NOTE:** Variant types (Prime, Prisma, Wraith, Vaykor, etc.) should not be included in the weapon name __(with the exception of Euphona Prime, Dakra Prime, and Reaper Prime)__. Sword and Shield weapons must include spaces and the ampersand:\n(Ack & Brunt, Sigma & Octantis, etc.)\n\nThe platform argument is optional, but you can use it to override the default platform setting. If it is omitted, this command will return the Riven data for the default platform (currently {0}).\n\nAll data is actual trade data and not taken from trade chat.\n\n**Examples of valid queries:**\n`{1}riven Lato`, `{2}riven cobra & crane, ns`, `{3}riven REAPER PRIME, xb1`, `{4}riven vEiLeD PiStOl'.format(defaultPlatform.upper(), serverPrefixes[message.server.id], serverPrefixes[message.server.id], serverPrefixes[message.server.id], serverPrefixes[message.server.id])
 				await client.send_message(message.channel, embed=em)
 			elif help[1] == 'platform':
 				em.description = '`platform <platform>` - sets the default platform for searching rivens (you must have Manage Server permission to use this command).\n\nCurrently, the default platform is {0}\n\nValid platform parameters are `pc`, `xb1`, `ps4`, `ns`'.format(defaultPlatform.upper())
