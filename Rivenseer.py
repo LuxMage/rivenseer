@@ -75,7 +75,13 @@ async def on_message(message):
 		queryString = message.content.replace('{0}riven '.format(serverPrefixes[message.server.id]), '', 1)
 		query = queryString.split(", ")
 		
+		veiled = False
+		
 		riven = query[0].upper()
+		itemType = ''
+		
+		if riven == 'VEILED KITGUN' or riven == 'VEILED MELEE' or riven == 'VEILED PISTOL' or riven == 'VEILED RIFLE' or riven == 'VEILED SHOTGUN' or riven == 'VEILED ZAW':
+			veiled = True
 		
 		platform = ''
 		
@@ -119,15 +125,42 @@ async def on_message(message):
 		
 		foundRiven = False
 		
-		for r in searchList:
-			if riven.strip() == r.compatibility:
-				foundRiven = True
-				
+		if veiled == False:
+			for r in searchList:
+				if riven.strip() == r.compatibility:
+					foundRiven = True
+					
 				if r.rerolled == False:
 					rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Riven Popularity:** {4}\n\n'.format(r.avg, r.stddev, r.min, r.max, r.pop), inline=False)
-				
+					
 				elif r.rerolled == True:
 					rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Riven Popularity:** {4}'.format(r.avg, r.stddev, r.min, r.max, r.pop), inline=False)
+					
+		else:
+			if riven == 'VEILED KITGUN':
+				itemType = 'Kitgun Riven Mod'
+				riven = None
+			elif riven == 'VEILED MELEE':
+				itemType = 'Melee Riven Mod'
+				riven = None
+			elif riven == 'VEILED PISTOL':
+				itemType = 'Pistol Riven Mod'
+				riven = None
+			elif riven == 'VEILED RIFLE':
+				itemType = 'Rifle Riven Mod'
+				riven = None
+			elif riven == 'VEILED SHOTGUN':
+				itemType = 'Shotgun Riven Mod'
+				riven = None
+			elif riven == 'VEILED ZAW':
+				itemType = 'Zaw Riven Mod'
+				riven = None
+			
+				
+			for r in searchList:
+				if itemType == r.itemType and r.compatibility == None:
+					rivenEmbed.add_field(name='VEILED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Riven Popularity:** {4}'.format(r.avg, r.stddev, r.min, r.max, r.pop), inline=False)
+					foundRiven = True
 					
 		if foundRiven == True:
 			await client.send_message(message.channel, embed=rivenEmbed)
