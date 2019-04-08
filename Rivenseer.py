@@ -131,7 +131,7 @@ async def on_message(message):
 					foundRiven = True
 					
 					if r.rerolled == False:
-						rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}\n\n'.format(r.avg, r.stddev, r.min, r.max, r.median r.pop), inline=False)
+						rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}\n\n'.format(r.avg, r.stddev, r.min, r.max, r.median, r.pop), inline=False)
 					
 					elif r.rerolled == True:
 						rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}'.format(r.avg, r.stddev, r.min, r.max, r.median, r.pop), inline=False)
