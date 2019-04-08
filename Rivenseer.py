@@ -130,11 +130,11 @@ async def on_message(message):
 				if riven.strip() == r.compatibility:
 					foundRiven = True
 					
-				if r.rerolled == False:
-					rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Riven Popularity:** {4}\n\n'.format(r.avg, r.stddev, r.min, r.max, r.pop), inline=False)
+					if r.rerolled == False:
+						rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}\n\n'.format(r.avg, r.stddev, r.min, r.max, r.median r.pop), inline=False)
 					
-				elif r.rerolled == True:
-					rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Riven Popularity:** {4}'.format(r.avg, r.stddev, r.min, r.max, r.pop), inline=False)
+					elif r.rerolled == True:
+						rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}'.format(r.avg, r.stddev, r.min, r.max, r.median, r.pop), inline=False)
 					
 		else:
 			if riven == 'VEILED KITGUN':
@@ -159,7 +159,7 @@ async def on_message(message):
 				
 			for r in searchList:
 				if itemType == r.itemType and r.compatibility == None:
-					rivenEmbed.add_field(name='VEILED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Riven Popularity:** {4}'.format(r.avg, r.stddev, r.min, r.max, r.pop), inline=False)
+					rivenEmbed.add_field(name='VEILED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}'.format(r.avg, r.stddev, r.min, r.max, r.median, r.pop), inline=False)
 					foundRiven = True
 					
 		if foundRiven == True:
@@ -262,9 +262,8 @@ async def fetch_riven_data():
 		print('Error occurred while getting Riven data! Restart the bot and try again!')
 	
 async def riven_refresh():
-	dt = datetime.utcnow()
-	
 	while True:
+		dt = datetime.utcnow()
 		if dt.weekday() == 0 and dt.hour == 0 and dt.minute == 5:
 			fetch_riven_data()
 			print('New Riven data received!')
@@ -280,6 +279,6 @@ def dict_list_to_object_list(dictList):
         return obList
 
 def is_bot(message):
-	return message.author == client.user
+	return message.author == client.user or message.content.startswith('{0}'.format(serverPrefixes[message.server.id]))
 
 client.run(TOKEN)
