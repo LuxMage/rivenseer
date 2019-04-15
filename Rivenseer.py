@@ -296,8 +296,9 @@ async def riven_refresh():
 	while True:
 		dt = datetime.utcnow()
 		if dt.weekday() == 1 and dt.hour == 0 and dt.minute == 5:
-			fetch_riven_data()
+			await fetch_riven_data()
 			print('New Riven data received!')
+			await asyncio.sleep(60)
 		else:
 			await asyncio.sleep(60)
 
