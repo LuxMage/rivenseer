@@ -1,3 +1,4 @@
+import asyncio
 import csv
 import discord
 import json
@@ -18,14 +19,19 @@ xb1RivenData = list()
 ps4RivenData = list()
 nsRivenData = list()
 
-serverPrefixes = {'388168527460433953': '.', '563856512636944391': '.'}
-serverPlatforms = {'388168527460433953': 'pc', '563856512636944391': 'pc'}
+serverPrefixes = dict()
+serverPlatforms = dict()
 
 @client.event
 async def on_ready():
-
+	global client
+	
 	await fetch_riven_data()
-	riven_refresh()
+	client.loop.create_task(riven_refresh())
+	
+	get_server_data()
+	
+	client.loop.create_task(server_data_update())
 	
 	print('Bot initiated.')
 	
@@ -123,6 +129,9 @@ async def on_message(message):
 		rivenEmbed.description = 'This is the Riven data for {0}'.format(riven.strip())
 		rivenEmbed.colour = 0xF7BF25
 		
+		unrolled = ''
+		rolled = ''
+		
 		foundRiven = False
 		
 		if veiled == False:
@@ -131,10 +140,15 @@ async def on_message(message):
 					foundRiven = True
 					
 					if r.rerolled == False:
-						rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}\n\n'.format(r.avg, r.stddev, r.min, r.max, r.median, r.pop), inline=False)
+						unrolled = r
 					
 					elif r.rerolled == True:
-						rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}'.format(r.avg, r.stddev, r.min, r.max, r.median, r.pop), inline=False)
+						rolled = r
+			
+			if foundRiven == True:
+				rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}\n\n'.format(unrolled.avg, unrolled.stddev, unrolled.min, unrolled.max, unrolled.median, unrolled.pop), inline=False)
+				
+				rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}'.format(rolled.avg, rolled.stddev, rolled.min, rolled.max, rolled.median, rolled.pop), inline=False)
 					
 		else:
 			if riven == 'VEILED KITGUN':
@@ -237,6 +251,23 @@ class Riven:
 	
 # --------------------------------------------------------------
 
+async def server_data_update():
+	global serverPrefixes
+	global serverPlatforms
+	
+	while True:
+		await asyncio.sleep(600)
+		
+		with open('serverPrefixes.csv', 'w', newline='') as csvfile:
+                        prefixWriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                        for k, v in serverPrefixes.items():
+                                prefixWriter.writerow([k] + [v])
+			
+		with open('serverPlatforms.csv', 'w', newline='') as csvfile:
+			platformWriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+			for k, v in serverPlatforms.items():
+				platformWriter.writerow([k] + [v])
+
 async def fetch_riven_data():
 	pc = requests.get('http://n9e5v4d8.ssl.hwcdn.net/repos/weeklyRivensPC.json')
 	xb1 = requests.get('http://n9e5v4d8.ssl.hwcdn.net/repos/weeklyRivensXB1.json')
@@ -268,7 +299,7 @@ async def riven_refresh():
 			fetch_riven_data()
 			print('New Riven data received!')
 		else:
-			time.sleep(60)
+			await asyncio.sleep(60)
 
 def dict_list_to_object_list(dictList):
         obList = list()
@@ -277,6 +308,25 @@ def dict_list_to_object_list(dictList):
                 obList.append(riven)
 
         return obList
+	
+def get_server_data():
+	global serverPrefixes
+	global serverPlatforms
+	
+	serverPrefixes = dict()
+	serverPlatforms = dict()
+
+	with open('serverPrefixes.csv', newline='') as csvfile:
+		prefixReader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+		for row in prefixReader:
+			entry = {row[0]: row[1]}
+			serverPrefixes.update(entry)
+	
+	with open('serverPlatforms.csv', newline='') as csvfile:
+		platformReader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+		for row in platformReader:
+			entry = {row[0]: row[1]}
+			serverPlatforms.update(entry)
 
 def is_bot(message):
 	return message.author == client.user or message.content.startswith('{0}'.format(serverPrefixes[message.server.id]))
