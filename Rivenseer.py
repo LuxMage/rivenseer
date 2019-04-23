@@ -129,8 +129,8 @@ async def on_message(message):
 		rivenEmbed.description = 'This is the Riven data for {0}'.format(riven.strip())
 		rivenEmbed.colour = 0xF7BF25
 		
-		unrolled = ''
-		rolled = ''
+		unrolled = None
+		rolled = None
 		
 		foundRiven = False
 		
@@ -146,9 +146,15 @@ async def on_message(message):
 						rolled = r
 			
 			if foundRiven == True:
-				rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}\n\n'.format(unrolled.avg, unrolled.stddev, unrolled.min, unrolled.max, unrolled.median, unrolled.pop), inline=False)
+				if unrolled is not None:
+					rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}\n\n'.format(unrolled.avg, unrolled.stddev, unrolled.min, unrolled.max, unrolled.median, unrolled.pop), inline=False)
+				else:
+					rivenEmbed.add_field(name='UNROLLED RIVEN DATA\n----------------------------------------', value='**No data was found for an unrolled riven for this weapon**', inline=False)
 				
-				rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}'.format(rolled.avg, rolled.stddev, rolled.min, rolled.max, rolled.median, rolled.pop), inline=False)
+				if rolled is not None:
+					rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**Average Price:** {0}\n**Standard Deviation:** {1}\n**Minimum Price:** {2}\n**Maximum Price:** {3}\n**Median:** {4}\n**Riven Popularity:** {5}'.format(rolled.avg, rolled.stddev, rolled.min, rolled.max, rolled.median, rolled.pop), inline=False)
+				else:
+					rivenEmbed.add_field(name='ROLLED RIVEN DATA\n----------------------------------------', value='**No data was found for a rolled riven for this weapon**', inline=False)
 					
 		else:
 			if riven == 'VEILED KITGUN':
