@@ -25,6 +25,7 @@ serverPlatforms = dict()
 @client.event
 async def on_ready():
 	global client
+	global serverPrefixes
 	
 	await fetch_riven_data()
 	client.loop.create_task(riven_refresh())
@@ -32,11 +33,11 @@ async def on_ready():
 	get_server_data()
 	
 	client.loop.create_task(server_data_update())
-	
+		
 	print('Bot initiated.')
 	
 @client.event
-async def on_server_join(server):
+async def on_guild_join(server):
 	global defaultPrefix
 	global serverPrefixes
 	global defaultPlatform
@@ -46,7 +47,7 @@ async def on_server_join(server):
 	serverPlatforms[server.id] = defaultPlatform
 	
 @client.event
-async def on_server_remove(server):
+async def on_guild_remove(server):
 	global serverPrefixes
 	global serverPlatforms
 	
@@ -62,23 +63,18 @@ async def on_message(message):
 		return
 	
 	# Prefix change ---------
-	if message.content.startswith('{0}prefix'.format(serverPrefixes[message.server.id])):
-		if message.author.server_permissions.manage_server:
+	if message.content.startswith('{0}prefix'.format(serverPrefixes[str(message.guild.id)])):
+		if message.author.permissions_in(message.channel).manage_guild:
 			cmd = message.content.split(" ")
-			serverPrefixes[message.server.id] = cmd[1]
-			msg = 'My prefix is now \"{0}\"! Use that to summon me!'.format(serverPrefixes[message.server.id])
-			await client.send_message(message.channel, msg)
+			serverPrefixes[str(message.guild.id)] = cmd[1]
+			msg = 'My prefix is now \"{0}\"! Use that to summon me!'.format(serverPrefixes[str(message.guild.id)])
+			await message.channel.send(msg)
 		else:
-			await client.send_message(message.channel, 'You do not have permission to change the prefix!')
-		
-	# Message cleaner -------
-	elif message.content.startswith('{0}clean'.format(serverPrefixes[message.server.id])):
-		deletedList = await client.purge_from(message.channel, check=is_bot)
-		await client.send_message(message.channel, 'Deleted {0} message(s)'.format(len(deletedList)))
+			await message.channel.send('You do not have permission to change the prefix!')
 		
 	# Riven search ----------
-	elif message.content.startswith('{0}riven'.format(serverPrefixes[message.server.id])):
-		queryString = message.content.replace('{0}riven '.format(serverPrefixes[message.server.id]), '', 1)
+	elif message.content.startswith('{0}riven'.format(serverPrefixes[str(message.guild.id)])):
+		queryString = message.content.replace('{0}riven '.format(serverPrefixes[str(message.guild.id)]), '', 1)
 		query = queryString.split(", ")
 		
 		veiled = False
@@ -92,7 +88,7 @@ async def on_message(message):
 		platform = ''
 		
 		if len(query) == 1:
-			platform = serverPlatforms[message.server.id]
+			platform = serverPlatforms[str(message.guild.id)]
 		else:
 			plat = query[1].lower()
 			
@@ -105,7 +101,7 @@ async def on_message(message):
 			elif plat == 'ns':
 				platform = 'ns'
 			else:
-				await client.send_message(message.channel, 'Platform not recognized. Use `{0}help platform` for a list of valid platforms!'.format(serverPrefixes[message.server.id]))
+				await message.channel.send('Platform not recognized. Use `{0}help platform` for a list of valid platforms!'.format(serverPrefixes[str(message.guild.id)]))
 				return
 		
 		searchList = list()
@@ -183,70 +179,65 @@ async def on_message(message):
 					foundRiven = True
 					
 		if foundRiven == True:
-			await client.send_message(message.channel, embed=rivenEmbed)
+			await message.channel.send(embed=rivenEmbed)
 				
 		else:
-			await client.send_message(message.channel, 'No Riven was found. Try again!')
+			await message.channel.send('No Riven was found. Try again!')
 	
 	# Help prompt -----------------
-	elif message.content.startswith('{0}help'.format(serverPrefixes[message.server.id])):
+	elif message.content.startswith('{0}help'.format(serverPrefixes[str(message.guild.id)])):
 		help = message.content.split()
 		em = discord.Embed()
 		em.title = 'Rivenseer'
 		em.colour = 0xF7BF25
 		
 		if len(help) == 1:
-			em.description = 'Hello! I am a bot designed to fetch Warframe Riven Data (provided by the developers) and make it available here in Discord!\nCurrently, my prefix is `{0}`\nIf you would like more info on a command, type `{1}help <command>`!'.format(serverPrefixes[message.server.id], serverPrefixes[message.server.id])
+			em.description = 'Hello! I am a bot designed to fetch Warframe Riven Data (provided by the developers) and make it available here in Discord!\nCurrently, my prefix is `{0}`\nIf you would like more info on a command, type `{1}help <command>`!'.format(serverPrefixes[str(message.guild.id)], serverPrefixes[str(message.guild.id)])
 			em.add_field(name='COMMANDS', value='`help` - displays this prompt\n`riven` - gets current Riven data on a weapon\n`platform` - sets the default platform used by the riven command\n`clean` - removes some (if not all) of messages produced by me\n`prefix` - changes the prefix used to summon me', inline=False)
-			await client.send_message(message.channel, embed=em)
+			await message.channel.send(embed=em)
 		else:
 			if help[1] == 'help':
 				em.description = '`help` - displays the generic help prompt\n`help <command>` - displays more info about the given command'
-				await client.send_message(message.channel, embed=em)
+				await message.channel.send(embed=em)
 			elif help[1] == 'riven':
-				em.description = '`riven <weapon>, [platform]` - gets Riven data for that weapon (unrolled rivens and rolled rivens).\n\n**NOTE:** Variant types (Prime, Prisma, Wraith, Vaykor, etc.) should not be included in the weapon name __(with the exception of Euphona Prime, Dakra Prime, and Reaper Prime)__. Sword and Shield weapons must include spaces and the ampersand:\n(Ack & Brunt, Sigma & Octantis, etc.)\n\nThe platform argument is optional, but you can use it to override the default platform setting. If it is omitted, this command will return the Riven data for the default platform (currently {0}).\n\nAll data is actual trade data and not taken from trade chat.\n\n**Examples of valid queries:**\n`{1}riven Lato`, `{2}riven cobra & crane, ns`, `{3}riven REAPER PRIME, xb1`'.format(defaultPlatform.upper(), serverPrefixes[message.server.id], serverPrefixes[message.server.id], serverPrefixes[message.server.id])
-				await client.send_message(message.channel, embed=em)
+				em.description = '`riven <weapon>, [platform]` - gets Riven data for that weapon (unrolled rivens and rolled rivens).\n\n**NOTE:** Variant types (Prime, Prisma, Wraith, Vaykor, etc.) should not be included in the weapon name __(with the exception of Euphona Prime, Dakra Prime, and Reaper Prime)__. Sword and Shield weapons must include spaces and the ampersand:\n(Ack & Brunt, Sigma & Octantis, etc.)\n\nThe platform argument is optional, but you can use it to override the default platform setting. If it is omitted, this command will return the Riven data for the default platform (currently {0}).\n\nAll data is actual trade data and not taken from trade chat.\n\n**Examples of valid queries:**\n`{1}riven Lato`, `{2}riven cobra & crane, ns`, `{3}riven REAPER PRIME, xb1`'.format(defaultPlatform.upper(), serverPrefixes[str(message.guild.id)], serverPrefixes[str(message.guild.id)], serverPrefixes[str(message.guild.id)])
+				await message.channel.send(embed=em)
 			elif help[1] == 'platform':
 				em.description = '`platform <platform>` - sets the default platform for searching rivens (you must have Manage Server permission to use this command).\n\nCurrently, the default platform is {0}\n\nValid platform parameters are `pc`, `xb1`, `ps4`, `ns`'.format(defaultPlatform.upper())
-				await client.send_message(message.channel, embed=em)
+				await message.channel.send(embed=em)
 			elif help[1] == 'clean':
-				em.description = '`clean` - removes some (if not all) of my messages from the channel this command is invoked from (bot requires Manage Message permissions)'
-				await client.send_message(message.channel, embed=em)
+				em.description = '`clean` - removes some (if not all) of my messages from the message.channel this command is invoked from (bot requires Manage Message permissions)'
+				await message.channel.send(embed=em)
 			elif help[1] == 'prefix':
 				em.description = '`prefix <newPrefix>` - changes the prefix used to summon me (you must have Manage Server permissions)'
-				await client.send_message(message.channel, embed=em)
+				await message.channel.send(embed=em)
 			else:
-				await client.send_message(message.channel, 'No command by that name exists!')
+				await message.channel.send('No command by that name exists!')
 	
 	# Default platform switcher -------------
-	elif message.content.startswith('{0}platform'.format(serverPrefixes[message.server.id])):
-		platform = message.content.replace('{0}platform '.format(serverPrefixes[message.server.id]), '')
+	elif message.content.startswith('{0}platform'.format(serverPrefixes[str(message.guild.id)])):
+		platform = message.content.replace('{0}platform '.format(serverPrefixes[str(message.guild.id)]), '')
 		
-		if message.author.server_permissions.manage_server == True:
+		if message.author.permissions_in(message.channel).manage_guild == True:
 			if platform.lower() == 'pc':
-				serverPlatforms[message.server.id] = 'pc'
-				await client.send_message(message.channel, 'Default platform changed to PC!')
+				serverPlatforms[str(message.guild.id)] = 'pc'
+				await message.channel.send('Default platform changed to PC!')
 			elif platform.lower() == 'xb1':
-				serverPlatforms[message.server.id] = 'xb1'
-				await client.send_message(message.channel, 'Default platform changed to XBox One!')
+				serverPlatforms[str(message.guild.id)] = 'xb1'
+				await message.channel.send('Default platform changed to XBox One!')
 			elif platform.lower() == 'ps4':
-				serverPlatforms[message.server.id] = 'ps4'
-				await client.send_message(message.channel, 'Default platform changed to PlayStation 4!')
+				serverPlatforms[str(message.guild.id)] = 'ps4'
+				await message.channel.send('Default platform changed to PlayStation 4!')
 			elif platform.lower() == 'ns':
-				serverPlatforms[message.server.id] = 'ns'
-				await client.send_message(message.channel, 'Default platform changed to Nintendo Switch!')
+				serverPlatforms[str(message.guild.id)] = 'ns'
+				await message.channel.send('Default platform changed to Nintendo Switch!')
 			else:
-				await client.send_message(message.channel, 'Platform not recognized. Use `{0}help platform` for more info!'.format(prefix))
+				await message.channel.send('Platform not recognized. Use `{0}help platform` for more info!'.format(prefix))
 		else:
-			await client.send_message('You do not have permission to change the default platform!')
-			
-	elif message.content.startswith('{0}writeCSV'.format(serverPrefixes[message.server.id])):
-		with open('serverPrefixes.csv', 'w', newline='') as csvFile:
-			write = csv.writer(csvFile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-			write.writerow([message.server.id] + [serverPrefixes[message.server.id]])
+			await message.channel.send('You do not have permission to change the default platform!')
 				
-	elif message.content.startswith('{0}'.format(serverPrefixes[message.server.id])):
-		await client.send_message(message.channel, 'Command not recognized. Use the `help` command to see a list of my commands!')
+	elif message.content.startswith('{0}'.format(serverPrefixes[str(message.guild.id)])):
+		await message.channel.send('Command not recognized. Use the `help` command to see a list of my commands!')
 
 # --------------------------------------------------------------
 
@@ -265,10 +256,10 @@ async def server_data_update():
 		await asyncio.sleep(600)
 		
 		with open('serverPrefixes.csv', 'w', newline='') as csvfile:
-                        prefixWriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                        for k, v in serverPrefixes.items():
-                                prefixWriter.writerow([k] + [v])
-			
+			prefixWriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+			for k, v in serverPrefixes.items():
+				prefixWriter.writerow([k] + [v])
+				
 		with open('serverPlatforms.csv', 'w', newline='') as csvfile:
 			platformWriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 			for k, v in serverPlatforms.items():
@@ -309,12 +300,12 @@ async def riven_refresh():
 			await asyncio.sleep(60)
 
 def dict_list_to_object_list(dictList):
-        obList = list()
-        for d in dictList:
-                riven = Riven(d)
-                obList.append(riven)
+	obList = list()
+	for d in dictList:
+		riven = Riven(d)
+		obList.append(riven)
 
-        return obList
+	return obList
 	
 def get_server_data():
 	global serverPrefixes
@@ -336,6 +327,6 @@ def get_server_data():
 			serverPlatforms.update(entry)
 
 def is_bot(message):
-	return message.author == client.user or message.content.startswith('{0}'.format(serverPrefixes[message.server.id]))
+	return message.author == client.user or message.content.startswith('{0}'.format(serverPrefixes[str(message.guild.id)]))
 
 client.run(TOKEN)
