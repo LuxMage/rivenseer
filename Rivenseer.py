@@ -200,7 +200,7 @@ async def on_message(message):
 				em.description = '`help` - displays the generic help prompt\n`help <command>` - displays more info about the given command'
 				await message.channel.send(embed=em)
 			elif help[1] == 'riven':
-				em.description = '`riven <weapon>, [platform]` - gets Riven data for that weapon (unrolled rivens and rolled rivens).\n\n**NOTE:** Variant types (Prime, Prisma, Wraith, Vaykor, etc.) should not be included in the weapon name __(with the exception of Euphona Prime, Dakra Prime, and Reaper Prime)__. Sword and Shield weapons must include spaces and the ampersand:\n(Ack & Brunt, Sigma & Octantis, etc.)\n\nThe platform argument is optional, but you can use it to override the default platform setting. If it is omitted, this command will return the Riven data for the default platform (currently {0}).\n\nAll data is actual trade data and not taken from trade chat.\n\n**Examples of valid queries:**\n`{1}riven Lato`, `{2}riven cobra & crane, ns`, `{3}riven REAPER PRIME, xb1`'.format(defaultPlatform.upper(), serverPrefixes[str(message.guild.id)], serverPrefixes[str(message.guild.id)], serverPrefixes[str(message.guild.id)])
+				em.description = '`riven <weapon>, [platform]` - gets Riven data for that weapon (unrolled rivens and rolled rivens).\n\n**NOTE:** Variant types (Prime, Prisma, Wraith, Vaykor, etc.) should not be included in the weapon name __(with the exception of Euphona Prime, Dakra Prime, and Reaper Prime)__. Sword and Shield weapons must include spaces and the ampersand:\n(Ack & Brunt, Sigma & Octantis, etc.)\n\nThe platform argument is optional, but you can use it to override the default platform setting. If it is omitted, this command will return the Riven data for the default platform (currently {0}).\n\nAll data is actual trade data and not taken from trade chat.\n\n**Examples of valid queries:**\n`{1}riven Lato`, `{2}riven cobra & crane, ns`, `{3}riven REAPER PRIME, xb1`'.format(serverPlatforms[str(message.guild.id)], serverPrefixes[str(message.guild.id)], serverPrefixes[str(message.guild.id)], serverPrefixes[str(message.guild.id)])
 				await message.channel.send(embed=em)
 			elif help[1] == 'platform':
 				em.description = '`platform <platform>` - sets the default platform for searching rivens (you must have Manage Server permission to use this command).\n\nCurrently, the default platform is {0}\n\nValid platform parameters are `pc`, `xb1`, `ps4`, `ns`'.format(defaultPlatform.upper())
@@ -235,6 +235,21 @@ async def on_message(message):
 				await message.channel.send('Platform not recognized. Use `{0}help platform` for more info!'.format(prefix))
 		else:
 			await message.channel.send('You do not have permission to change the default platform!')
+			
+	elif message.content.startswith('{0}dmDataFiles'.format(serverPrefixes[str(message.guild.id)])):
+		print(message.author.id)
+		
+		dataFiles = [discord.File('serverPrefixes.csv', 'serverPrefixes.csv'), discord.File('serverPlatforms.csv', 'serverPlatforms.csv')]
+		
+		if message.author.id == 287670805062615040 and message.author.dm_channel is None:
+			await message.author.create_dm()
+			await message.author.dm_channel.send(files=dataFiles)
+			
+		elif message.author.id == 287670805062615040 and message.author.dm_channel is not None:
+			await message.author.dm_channel.send(files=dataFiles)
+			
+		else:
+			await message.channel.send('Command not recognized. Use the `help` command to see a list of my commands!')
 				
 	elif message.content.startswith('{0}'.format(serverPrefixes[str(message.guild.id)])):
 		await message.channel.send('Command not recognized. Use the `help` command to see a list of my commands!')
@@ -292,7 +307,7 @@ async def fetch_riven_data():
 async def riven_refresh():
 	while True:
 		dt = datetime.utcnow()
-		if dt.weekday() == 1 and dt.hour == 0 and dt.minute == 5:
+		if dt.weekday() == 0 and dt.hour == 0 and dt.minute == 5:
 			await fetch_riven_data()
 			print('New Riven data received!')
 			await asyncio.sleep(60)
