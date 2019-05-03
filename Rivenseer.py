@@ -361,5 +361,8 @@ def sigterm_handler(signal, frame):
 			
 	sys.exit(0)
 
+if __name__ == '__main__':
+	print('Sigterm handler registered!')
+	signal.signal(signal.SIGTERM, sigterm_handler)
+
 client.run(TOKEN)
-signal.signal(signal.SIGTERM, sigterm_handler)
