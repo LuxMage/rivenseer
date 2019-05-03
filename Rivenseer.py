@@ -3,6 +3,8 @@ import csv
 import discord
 import json
 import requests
+import signal
+import sys
 import time
 from collections import deque
 from datetime import datetime
@@ -343,5 +345,21 @@ def get_server_data():
 
 def is_bot(message):
 	return message.author == client.user or message.content.startswith('{0}'.format(serverPrefixes[str(message.guild.id)]))
+	
+def sigterm_handler(signal, frame):
+	'''with open('serverPrefixes.csv', 'w', newline='') as csvfile:
+		prefixWriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		for k, v in serverPrefixes.items():
+			prefixWriter.writerow([k] + [v])
+			
+	with open('serverPlatforms.csv', 'w', newline='') as csvfile:
+		platformWriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		for k, v in serverPlatforms.items():
+			platformWriter.writerow([k] + [v])'''
+			
+	print('Sigterm handler executed! Yay!')
+			
+	sys.exit(0)
 
 client.run(TOKEN)
+signal.signal(signal.SIGTERM, sigterm_handler)
