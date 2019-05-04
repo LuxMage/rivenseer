@@ -348,7 +348,7 @@ def is_bot(message):
 	
 def readConfiguration(signalNumber, frame):  
     print ('(SIGHUP) reading configuration')
-    return
+    sys.exit(141)
 
 def terminateProcess(signalNumber, frame):
 	print('Terminating process in...')
@@ -364,7 +364,8 @@ def terminateProcess(signalNumber, frame):
 
 def receiveSignal(signalNumber, frame):  
     print('Received:', signalNumber)
-    return
+    
+	sys.exit(140)
 
 if __name__ == '__main__':  
     # register the signals to be caught
