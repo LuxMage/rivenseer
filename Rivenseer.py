@@ -350,8 +350,8 @@ def readConfiguration(signalNumber, frame):
     print ('(SIGHUP) reading configuration')
     return
 
-def terminateProcess(signalNumber, frame):  
-    print('Terminating process in...')
+def terminateProcess(signalNumber, frame):
+	print('Terminating process in...')
 	time.sleep(1)
 	print('3...')
 	time.sleep(1)
@@ -359,7 +359,8 @@ def terminateProcess(signalNumber, frame):
 	time.sleep(1)
 	print('1...')
 	time.sleep(1)
-    sys.exit(0)
+	
+	sys.exit(0)
 
 def receiveSignal(signalNumber, frame):  
     print('Received:', signalNumber)
