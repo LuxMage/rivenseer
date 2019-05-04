@@ -346,9 +346,10 @@ def get_server_data():
 def is_bot(message):
 	return message.author == client.user or message.content.startswith('{0}'.format(serverPrefixes[str(message.guild.id)]))
 	
-def readConfiguration(signalNumber, frame):  
-    print ('(SIGHUP) reading configuration')
-    sys.exit(141)
+def readConfiguration(signalNumber, frame):
+	print('Something with configurations, I dunno...')
+	
+	sys.exit(141)
 
 def terminateProcess(signalNumber, frame):
 	print('Terminating process in...')
@@ -362,9 +363,9 @@ def terminateProcess(signalNumber, frame):
 	
 	sys.exit(0)
 
-def receiveSignal(signalNumber, frame):  
-    print('Received:', signalNumber)
-    
+def receiveSignal(signalNumber, frame):
+	print('Received: {0}'.format(signalNumber))
+	
 	sys.exit(140)
 
 if __name__ == '__main__':  
