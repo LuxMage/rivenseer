@@ -351,8 +351,15 @@ def readConfiguration(signalNumber, frame):
     return
 
 def terminateProcess(signalNumber, frame):  
-    print ('(SIGTERM) terminating the process')
-    sys.exit()
+    print('Terminating process in...')
+	time.sleep(1)
+	print('3...')
+	time.sleep(1)
+	print('2...')
+	time.sleep(1)
+	print('1...')
+	time.sleep(1)
+    sys.exit(0)
 
 def receiveSignal(signalNumber, frame):  
     print('Received:', signalNumber)
